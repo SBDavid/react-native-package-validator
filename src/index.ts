@@ -4,6 +4,8 @@ import envinfo from 'envinfo';
 import confirm from '@inquirer/confirm';
 const updateNotifier = require('update-notifier');
 const pkg = require('../package.json');
+import path from 'path';
+import fs from 'fs';
 
 
 type Version = String | number
@@ -154,6 +156,27 @@ const pkgCheck = async () => {
   notifier.notify({message: 'RN 版本检测已经升级{currentVersion} -> {latestVersion} \n 包含更全面的版本校验，请运行 yarn upgrade @xmly/react-native-package-validator@^{latestVersion}'});
 
   let checkRes = true;
+  // resolutions 检查
+  const pkgJsonPath = path.join(process.cwd(), 'package.json');
+  if (fs.existsSync(pkgJsonPath)) {
+    let resolutionsCheck = true;
+    const pkgJson = require(pkgJsonPath);
+    if (pkgJson['resolutions'] === undefined) {
+      resolutionsCheck = false;
+      checkRes = false;
+    }
+    if (resolutionsCheck && pkgJson['resolutions']['react-native'] === undefined) {
+      resolutionsCheck = false;
+      checkRes = false;
+    }
+    if (resolutionsCheck && pkgJson['resolutions']['react-native'] !== pkgJson['dependencies']['react-native']) {
+      resolutionsCheck = false;
+      checkRes = false;
+    }
+
+    console.error(`😱😱😱 package.json resolutions.react-native 配置错误 \n 请在 resolutions 中配置 react-native，且与dependencies.react-native 保持一致`);
+  }
+
   // 安装了有问题的包
   let shouldNotUseRes = await envinfo.run({
     npmPackages: shouldNotUse.map((check) => check.name)
@@ -163,7 +186,7 @@ const pkgCheck = async () => {
   shouldNotUseRes = JSON.parse(shouldNotUseRes);
   shouldNotUse.forEach((check) => {
     if (shouldNotUseRes.npmPackages[check.name] !== 'Not Found') {
-      console.error(`请不要使用 ${check.name}, ${check.suggestion}, 文档：${check.link}`);
+      console.error(`😱😱😱 请不要使用 ${check.name}, ${check.suggestion}, 文档：${check.link}`);
       checkRes = false;
       return;
     }
@@ -181,7 +204,7 @@ const pkgCheck = async () => {
       const version = shouldUseRes.npmPackages[check.name]['installed'];
       if ((check.minVersion && versionCompare(version, check.minVersion) === VersionIs.LessThan) ||
        (check.maxVersion && versionCompare(version, check.maxVersion) === VersionIs.GreaterThan)) {
-        console.error(`您使用了错误的版本 ${check.name}@${version}, minVersion: ${check.minVersion}, maxVersion: ${check.maxVersion}`);
+        console.error(`😱😱😱 您使用了错误的版本 ${check.name}@${version}, minVersion: ${check.minVersion}, maxVersion: ${check.maxVersion}`);
         checkRes = false;
         return;
        }
@@ -189,7 +212,7 @@ const pkgCheck = async () => {
   });
   if (!checkRes) {
     const ans = await confirm({
-      message: '您的依赖包版本不符合发布要求，可能导致性能问题或者无法在线上环境运行，是否仍要继续?',
+      message: '😱😱😱 您的依赖包版本不符合发布要求，可能导致性能问题或者无法在线上环境运行，是否仍要继续?',
     });
 
     if (!ans) {
