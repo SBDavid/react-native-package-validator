@@ -141,6 +141,16 @@ const shouldUse: ShouldUse[] = [
     maxVersion: '1.2.3'
   },
   {
+    name: '@babel/core',
+    minVersion: '7.11.6',
+    maxVersion: '7.11.6'
+  },
+  {
+    name: '@babel/runtime',
+    minVersion: '7.11.2',
+    maxVersion: '7.11.2'
+  },
+  {
     name: '@xmly/sentry-react-native',
     minVersion: '3.0.2',
   }
